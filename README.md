@@ -48,6 +48,15 @@ python yo.py "strategic clarity" --seed "alpha"
 - Decision latency
 - Momentum half-life
 
+## Leverage Stack
+- Automation
+- Distribution
+- Reputation
+
+## Threats to Disarm
+- Drift
+- Context switching
+
 ## Invocation
 We are the Zenor order. We forge momentum with intent.
 ```

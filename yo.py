@@ -94,6 +94,27 @@ METRICS = [
     "Trust delta",
 ]
 
+LEVERAGE = [
+    "automation",
+    "community",
+    "code",
+    "capital",
+    "craft",
+    "partnerships",
+    "distribution",
+    "reputation",
+]
+
+THREATS = [
+    "drift",
+    "fragmentation",
+    "over-optimization",
+    "unclear ownership",
+    "premature scaling",
+    "stale narratives",
+    "context switching",
+]
+
 @dataclass
 class Blueprint:
     title: str
@@ -102,6 +123,8 @@ class Blueprint:
     unique_edge: list[str]
     protocol: list[str]
     metrics: list[str]
+    leverage: list[str]
+    threats: list[str]
     invocation: str
 
 
@@ -147,6 +170,8 @@ def build_blueprint(theme: str, seed: str | None) -> Blueprint:
     ]
 
     metrics = _pick(rng, METRICS, 3)
+    leverage = _pick(rng, LEVERAGE, 3)
+    threats = _pick(rng, THREATS, 2)
     invocation = f"We are the {name} order. We {verb} {noun} with intent."
 
     title = f"{name} Engine: {theme.title()}"
@@ -158,6 +183,8 @@ def build_blueprint(theme: str, seed: str | None) -> Blueprint:
         unique_edge=unique_edge,
         protocol=protocol,
         metrics=metrics,
+        leverage=leverage,
+        threats=threats,
         invocation=invocation,
     )
 
@@ -179,6 +206,12 @@ def render_markdown(blueprint: Blueprint) -> str:
         "",
         "## Signature Metrics",
         *[f"- {item}" for item in blueprint.metrics],
+        "",
+        "## Leverage Stack",
+        *[f"- {item.title()}" for item in blueprint.leverage],
+        "",
+        "## Threats to Disarm",
+        *[f"- {item}" for item in blueprint.threats],
         "",
         "## Invocation",
         textwrap.fill(blueprint.invocation, width=72),
