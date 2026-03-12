@@ -1,71 +1,51 @@
 # yo
 
-Yo is a tiny, zero-dependency command-line generator that turns a theme into a powerful, unique blueprint. It produces a title, power core, protocol, and metrics so you can move from intent to action in minutes.
+Yo is a zero-dependency command-line generator that turns a theme into a powerful, unique blueprint. It is designed for rapid planning, deterministic reproducibility, and MVP-level practical usage.
 
 ## Usage
+
+Generate one blueprint in Markdown:
 
 ```bash
 python yo.py "strategic clarity"
 ```
 
-Output JSON instead of Markdown:
+Generate JSON output:
 
 ```bash
 python yo.py "strategic clarity" --json
 ```
 
-Provide a seed for deterministic variation:
+Use a seed for deterministic variation:
 
 ```bash
 python yo.py "strategic clarity" --seed "alpha"
 ```
 
-Write output to a file:
+Generate multiple alternatives (great for team selection):
 
 ```bash
-python yo.py "strategic clarity" --output blueprint.md
+python yo.py "strategic clarity" --count 3
 ```
 
-## Example Output
+Write output to a file (directories are auto-created):
 
-```markdown
-# Zenor Engine: Strategic Clarity
-
-**Forge momentum by mastering ambiguity.**
-
-## Power Core
-- Harness curiosity to sharpen the strategic clarity signal.
-- Turn noise into a repeatable advantage.
-- Convert alignment into collective leverage.
-
-## Unique Edge
-- Favor rituals over heroics.
-- Design for compounding wins.
-- Make the invisible measurable.
-
-## Protocol
-1. Name the prime target: the most consequential strategic clarity decision this week.
-2. Build a minimum ritual: 90-minute creation sprint, no switching.
-3. Install a guardrail against surprise.
-4. Ship one proof artifact in 72 hours.
-
-## Signature Metrics
-- Signal-to-noise ratio
-- Decision latency
-- Momentum half-life
-
-## Leverage Stack
-- Automation
-- Distribution
-- Reputation
-
-## Threats to Disarm
-- Drift
-- Context switching
-
-## Invocation
-We are the Zenor order. We forge momentum with intent.
+```bash
+python yo.py "strategic clarity" --count 3 --output plans/blueprints.md
 ```
+
+## Output Sections
+
+Each blueprint includes:
+
+- Title and tagline
+- Power Core
+- Unique Edge
+- Protocol
+- Signature Metrics
+- Leverage Stack
+- Threats to Disarm
+- Invocation
 
 ## Testing
 
@@ -77,4 +57,21 @@ python -m unittest discover -s tests
 
 ```bash
 python benchmarks/benchmark_yo.py
+```
+
+Example benchmark output (machine-dependent):
+
+```text
+[build_one] runs=500
+[build_one] mean_ms=0.095
+[build_one] p95_ms=0.160
+[build_three] runs=500
+[build_three] mean_ms=0.251
+[build_three] p95_ms=0.420
+[render_markdown] runs=500
+[render_markdown] mean_ms=0.014
+[render_markdown] p95_ms=0.021
+[render_json] runs=500
+[render_json] mean_ms=0.023
+[render_json] p95_ms=0.032
 ```

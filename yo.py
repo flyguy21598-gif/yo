@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Yo: generate a powerful, unique blueprint from a theme."""
+"""Yo: generate powerful, unique blueprints from a theme."""
 
 from __future__ import annotations
 
@@ -7,9 +7,11 @@ import argparse
 import hashlib
 import json
 import random
+import re
 import sys
 import textwrap
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
 SYLLABLES = [
     "ka",
@@ -116,7 +118,10 @@ THREATS = [
     "context switching",
 ]
 
-@dataclass
+THEME_RE = re.compile(r"[^a-z0-9\s\-]", flags=re.IGNORECASE)
+
+
+@dataclass(eq=True)
 class Blueprint:
     title: str
     tagline: str
@@ -127,6 +132,10 @@ class Blueprint:
     leverage: list[str]
     threats: list[str]
     invocation: str
+
+
+class YoError(Exception):
+    """Raised for user-facing command errors."""
 
 
 def _seed_from(theme: str, seed: str | None) -> int:
@@ -143,7 +152,16 @@ def _pick(rng: random.Random, items: list[str], count: int) -> list[str]:
     return rng.sample(items, count)
 
 
+def _sanitize_theme(theme: str) -> str:
+    cleaned = THEME_RE.sub("", theme).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    if len(cleaned) < 3:
+        raise YoError("theme must be at least 3 valid characters")
+    return cleaned
+
+
 def build_blueprint(theme: str, seed: str | None) -> Blueprint:
+    theme = _sanitize_theme(theme)
     rng = random.Random(_seed_from(theme, seed))
     name = _syllable_name(rng)
     verb = rng.choice(VERBS)
@@ -157,17 +175,13 @@ def build_blueprint(theme: str, seed: str | None) -> Blueprint:
         f"Convert {rng.choice(NOUNS)} into collective leverage.",
     ]
 
-    unique_edge = [
-        f"{rng.choice(PRINCIPLES)}",
-        f"{rng.choice(PRINCIPLES)}",
-        f"{rng.choice(PRINCIPLES)}",
-    ]
+    unique_edge = [rng.choice(PRINCIPLES) for _ in range(3)]
 
     protocol = [
         f"Name the prime target: the most consequential {theme} decision this week.",
         f"Build a minimum ritual: {rng.choice(RITUALS)}",
         f"Install a guardrail against {rng.choice(FORCES)}.",
-        f"Ship one proof artifact in 72 hours.",
+        "Ship one proof artifact in 72 hours.",
     ]
 
     metrics = _pick(rng, METRICS, 3)
@@ -175,10 +189,8 @@ def build_blueprint(theme: str, seed: str | None) -> Blueprint:
     threats = _pick(rng, THREATS, 2)
     invocation = f"We are the {name} order. We {verb} {noun} with intent."
 
-    title = f"{name} Engine: {theme.title()}"
-
     return Blueprint(
-        title=title,
+        title=f"{name} Engine: {theme.title()}",
         tagline=tagline,
         power_core=power_core,
         unique_edge=unique_edge,
@@ -188,6 +200,12 @@ def build_blueprint(theme: str, seed: str | None) -> Blueprint:
         threats=threats,
         invocation=invocation,
     )
+
+
+def build_blueprints(theme: str, seed: str | None, count: int) -> list[Blueprint]:
+    if count < 1 or count > 20:
+        raise YoError("count must be between 1 and 20")
+    return [build_blueprint(theme, f"{seed or 'seed'}:{idx}") for idx in range(count)]
 
 
 def render_markdown(blueprint: Blueprint) -> str:
@@ -221,8 +239,16 @@ def render_markdown(blueprint: Blueprint) -> str:
     return "\n".join(lines)
 
 
-def render_json(blueprint: Blueprint) -> str:
-    return json.dumps(blueprint.__dict__, indent=2)
+def render_markdown_many(blueprints: list[Blueprint]) -> str:
+    return "\n---\n\n".join(render_markdown(blueprint).strip() for blueprint in blueprints)
+
+
+def render_json(data: Blueprint | list[Blueprint]) -> str:
+    if isinstance(data, list):
+        payload = [asdict(item) for item in data]
+    else:
+        payload = asdict(data)
+    return json.dumps(payload, indent=2)
 
 
 def parse_args() -> argparse.Namespace:
@@ -237,6 +263,12 @@ def parse_args() -> argparse.Namespace:
         help="Output JSON instead of Markdown",
     )
     parser.add_argument(
+        "--count",
+        type=int,
+        default=1,
+        help="Generate multiple blueprint variations (1-20)",
+    )
+    parser.add_argument(
         "--output",
         "-o",
         help="Write output to a file instead of stdout",
@@ -244,24 +276,39 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _write_output(output: str, output_path: str) -> None:
+    try:
+        path = Path(output_path)
+        if path.parent and not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(output + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise YoError(f"failed to write output: {exc}") from exc
+
+
 def main() -> None:
     args = parse_args()
-    blueprint = build_blueprint(args.theme, args.seed)
-    if args.json:
-        output = render_json(blueprint)
-    else:
-        output = render_markdown(blueprint)
+    try:
+        payload: Blueprint | list[Blueprint]
+        if args.count == 1:
+            payload = build_blueprint(args.theme, args.seed)
+        else:
+            payload = build_blueprints(args.theme, args.seed, args.count)
 
-    if args.output:
-        try:
-            with open(args.output, "w", encoding="utf-8") as handle:
-                handle.write(output)
-                handle.write("\n")
-        except OSError as exc:
-            print(f"yo: failed to write output: {exc}", file=sys.stderr)
-            raise SystemExit(1) from exc
-    else:
-        print(output)
+        if args.json:
+            output = render_json(payload)
+        elif isinstance(payload, list):
+            output = render_markdown_many(payload)
+        else:
+            output = render_markdown(payload)
+
+        if args.output:
+            _write_output(output, args.output)
+        else:
+            print(output)
+    except YoError as exc:
+        print(f"yo: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
 
 
 if __name__ == "__main__":

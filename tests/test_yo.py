@@ -1,7 +1,8 @@
 import json
-import os
+import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 import yo
 
@@ -28,15 +29,66 @@ class TestYoBlueprint(unittest.TestCase):
         ]:
             self.assertIn(key, payload)
 
-    def test_output_file_write(self):
-        blueprint = yo.build_blueprint("focus", seed="alpha")
-        output = yo.render_markdown(blueprint)
+    def test_sanitized_theme(self):
+        blueprint = yo.build_blueprint("*** strategic clarity!!!", seed="x")
+        self.assertIn("Strategic Clarity", blueprint.title)
+
+    def test_multiple_variations_count(self):
+        blueprints = yo.build_blueprints("focus", seed="alpha", count=3)
+        self.assertEqual(len(blueprints), 3)
+        self.assertEqual(len({bp.title for bp in blueprints}), 3)
+
+    def test_cli_output_file_write(self):
+        root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as tmpdir:
-            path = os.path.join(tmpdir, "out.md")
-            with open(path, "w", encoding="utf-8") as handle:
-                handle.write(output)
-            with open(path, "r", encoding="utf-8") as handle:
-                self.assertEqual(handle.read(), output)
+            out = Path(tmpdir) / "nested" / "blueprint.md"
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(root / "yo.py"),
+                    "strategic clarity",
+                    "--output",
+                    str(out),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0)
+            self.assertTrue(out.exists())
+            self.assertIn("Engine", out.read_text(encoding="utf-8"))
+
+    def test_cli_json_count(self):
+        root = Path(__file__).resolve().parents[1]
+        proc = subprocess.run(
+            [
+                "python",
+                str(root / "yo.py"),
+                "focus",
+                "--count",
+                "2",
+                "--json",
+                "--seed",
+                "alpha",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(len(payload), 2)
+
+    def test_invalid_count_fails(self):
+        root = Path(__file__).resolve().parents[1]
+        proc = subprocess.run(
+            ["python", str(root / "yo.py"), "focus", "--count", "0"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("count must be between 1 and 20", proc.stderr)
 
 
 if __name__ == "__main__":
