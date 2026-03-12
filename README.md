@@ -20,6 +20,12 @@ Provide a seed for deterministic variation:
 python yo.py "strategic clarity" --seed "alpha"
 ```
 
+Write output to a file:
+
+```bash
+python yo.py "strategic clarity" --output blueprint.md
+```
+
 ## Example Output
 
 ```markdown
@@ -59,4 +65,16 @@ python yo.py "strategic clarity" --seed "alpha"
 
 ## Invocation
 We are the Zenor order. We forge momentum with intent.
+```
+
+## Testing
+
+```bash
+python -m unittest discover -s tests
+```
+
+## Benchmarking
+
+```bash
+python benchmarks/benchmark_yo.py
 ```

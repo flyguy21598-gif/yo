@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import random
+import sys
 import textwrap
 from dataclasses import dataclass
 
@@ -235,6 +236,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Output JSON instead of Markdown",
     )
+    parser.add_argument(
+        "--output",
+        "-o",
+        help="Write output to a file instead of stdout",
+    )
     return parser.parse_args()
 
 
@@ -242,9 +248,20 @@ def main() -> None:
     args = parse_args()
     blueprint = build_blueprint(args.theme, args.seed)
     if args.json:
-        print(render_json(blueprint))
+        output = render_json(blueprint)
     else:
-        print(render_markdown(blueprint))
+        output = render_markdown(blueprint)
+
+    if args.output:
+        try:
+            with open(args.output, "w", encoding="utf-8") as handle:
+                handle.write(output)
+                handle.write("\n")
+        except OSError as exc:
+            print(f"yo: failed to write output: {exc}", file=sys.stderr)
+            raise SystemExit(1) from exc
+    else:
+        print(output)
 
 
 if __name__ == "__main__":
