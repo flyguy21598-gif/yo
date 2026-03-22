@@ -2,25 +2,27 @@
 
 ## Codex Task Pipeline
 
-This repository now contains a machine-readable **Codex Task Pipeline** for the requested trading-bot roadmap.
+This repository now includes a working **Codex Task Pipeline** utility for the trading-bot roadmap.
 
-### Files
+### What's included
 
-- `pipeline/codex-task-pipeline.json` — canonical phase, task, dependency, and agent definition.
-- `docs/codex-task-pipeline.md` — human-readable guide for executing the roadmap with Codex.
+- `pipeline/codex-task-pipeline.json` — canonical five-phase roadmap with tasks, dependencies, release tracks, and automation metadata.
+- `pipeline/pipeline-state.json` — persisted task completion state.
+- `src/codex_pipeline/` — loader, planner, validator, and CLI implementation.
+- `tests/test_pipeline.py` — regression tests for validation, dependency enforcement, and state handling.
 
 ### Quick start
 
-1. Open `pipeline/codex-task-pipeline.json`.
-2. Choose a release track (`paper_trading`, `live_trading_minimum`, or `full_platform`).
-3. Start with the next unblocked task.
-4. Use the task ID and acceptance criteria as the implementation prompt for Codex.
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli validate
+PYTHONPATH=src python -m codex_pipeline.cli summary
+PYTHONPATH=src python -m codex_pipeline.cli next
+```
 
-### First recommended tasks
+### Example workflow
 
-- `P1-T1` Refactor trading bot into modular services
-- `P1-T2` Implement centralized config system
-- `P1-T3` Add structured logging
-- `P1-T6` Implement environment validation script
-- `P4-T19` Build global risk manager
-- `P4-T20` Implement kill-switch
+1. Validate the pipeline.
+2. Ask for the next unblocked task.
+3. Implement that task in the trading-bot codebase.
+4. Mark it complete in `pipeline/pipeline-state.json`.
+5. Re-check summary and release-track status.

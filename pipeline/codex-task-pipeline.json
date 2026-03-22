@@ -1,35 +1,35 @@
 {
   "pipeline": {
     "name": "trading-bot-modernization",
-    "version": "1.0.0",
-    "objective": "Deliver a stable, observable, risk-aware trading bot through phased Codex-driven execution.",
+    "version": "2.0.0",
+    "objective": "Deliver a stable, observable, risk-aware trading bot through five execution phases that Codex can validate, track, and advance.",
     "default_mode": "stability_first",
     "global_rules": {
       "branch_naming": "feature/<phase>-<task-slug>",
       "commit_style": "<scope>: <summary>",
       "definition_of_done": [
-        "code implemented",
+        "implementation merged",
         "tests added or updated",
         "config documented",
-        "rollback path documented",
+        "rollback or shutdown path documented",
         "observability hooks verified"
       ],
       "phase_gates": [
-        "Phase 1 must be complete before any production strategy changes",
-        "Phase 4 controls block release if unmet",
-        "Dashboard and agent features consume risk and logging interfaces rather than bypassing them"
+        "Core Engine must be stable before strategy work expands",
+        "Money Control is release-blocking for live trading",
+        "Dashboard controls must use the same risk and execution APIs as automated flows"
       ]
     },
     "agents": [
       {
         "name": "supervisor-agent",
-        "role": "Owns dependency ordering, gate checks, and release decisions.",
+        "role": "Owns sequencing, gate checks, and release decisions.",
         "inputs": ["task status", "test results", "risk exceptions"],
-        "outputs": ["go/no-go decision", "re-prioritized backlog"]
+        "outputs": ["go or no-go decision", "reprioritized backlog"]
       },
       {
         "name": "strategy-agent",
-        "role": "Builds and evaluates alpha-generating logic.",
+        "role": "Builds and evaluates signal-generation logic.",
         "inputs": ["market data", "feature store", "backtests", "sentiment scores"],
         "outputs": ["signals", "confidence", "parameter proposals"]
       },
@@ -50,8 +50,8 @@
       {
         "id": "phase-1-core-engine",
         "name": "Core Engine",
-        "goal": "Stabilize the bot architecture before adding intelligence.",
-        "gate": "No later phase ships without Phase 1 observability, restartability, and configuration controls.",
+        "goal": "Stabilize the trading system architecture before intelligence and UI work.",
+        "gate": "No later phase ships without restartability, configuration controls, and structured telemetry.",
         "tasks": [
           {
             "id": "P1-T1",
@@ -59,9 +59,9 @@
             "owner": "execution-agent",
             "deliverables": ["execution service", "strategy service", "risk service", "logging service"],
             "acceptance_criteria": [
-              "service boundaries documented",
-              "cross-service interfaces typed or schema-defined",
-              "integration smoke test passes"
+              "service boundaries are explicit",
+              "cross-service contracts are typed or schema defined",
+              "integration smoke tests pass"
             ],
             "depends_on": []
           },
@@ -71,7 +71,7 @@
             "owner": "supervisor-agent",
             "deliverables": ["JSON or YAML config loader", "hot reload support", "config validation"],
             "acceptance_criteria": [
-              "runtime config reload does not require restart",
+              "runtime config reload does not require a restart",
               "invalid config changes are rejected safely",
               "default and production examples are documented"
             ],
@@ -85,7 +85,7 @@
             "acceptance_criteria": [
               "every order lifecycle event includes a trade ID",
               "latency is emitted in milliseconds",
-              "profit or realized PnL is emitted when applicable"
+              "realized PnL is emitted when applicable"
             ],
             "depends_on": ["P1-T1", "P1-T2"]
           },
@@ -97,7 +97,7 @@
             "acceptance_criteria": [
               "transient API failures are retried with backoff",
               "duplicate order placement is prevented",
-              "failover outcome is logged and alertable"
+              "failover outcomes are logged and alertable"
             ],
             "depends_on": ["P1-T3"]
           },
@@ -130,8 +130,8 @@
       {
         "id": "phase-2-strategy-intelligence",
         "name": "Strategy Intelligence",
-        "goal": "Add interpretable signal generation and sizing once the platform is stable.",
-        "gate": "Only enabled after Phase 1 is production-ready and backtest harness is available.",
+        "goal": "Add interpretable signal generation and sizing after the engine is stable.",
+        "gate": "Only enabled after the core engine is ready and replay testing exists.",
         "tasks": [
           {
             "id": "P2-T7",
@@ -140,7 +140,7 @@
             "deliverables": ["entry signal modules", "exit signal modules", "strategy orchestration"],
             "acceptance_criteria": [
               "signals are individually toggleable",
-              "entry and exit logic can be backtested independently"
+              "entry and exit logic can be replayed independently"
             ],
             "depends_on": ["P1-T1", "P1-T2", "P1-T3"]
           },
@@ -148,9 +148,9 @@
             "id": "P2-T8",
             "title": "Add multi-timeframe analysis",
             "owner": "strategy-agent",
-            "deliverables": ["1m analysis", "5m analysis", "15m analysis", "alignment rules"],
+            "deliverables": ["1m analysis", "5m analysis", "15m analysis", "trend alignment rules"],
             "acceptance_criteria": [
-              "trend alignment output is exposed as a reusable feature",
+              "alignment output is reusable by scoring and risk layers",
               "missing timeframe data degrades gracefully"
             ],
             "depends_on": ["P2-T7"]
@@ -161,8 +161,8 @@
             "owner": "strategy-agent",
             "deliverables": ["news connector", "social connector", "sentiment score normalizer"],
             "acceptance_criteria": [
-              "all external source failures are isolated",
-              "sentiment scores are timestamped and source-tagged"
+              "external source failures are isolated",
+              "scores are timestamped and source tagged"
             ],
             "depends_on": ["P1-T2", "P1-T3"]
           },
@@ -173,7 +173,7 @@
             "deliverables": ["weighted scoring engine", "confidence percent output"],
             "acceptance_criteria": [
               "weights are configurable",
-              "confidence score explains contributing factors"
+              "confidence explains contributing factors"
             ],
             "depends_on": ["P2-T8", "P2-T9"]
           },
@@ -194,7 +194,7 @@
             "owner": "strategy-agent",
             "deliverables": ["historical replay engine", "trade result evaluator", "strategy report output"],
             "acceptance_criteria": [
-              "backtests can replay strategy and execution assumptions",
+              "backtests replay strategy and execution assumptions",
               "reports capture win rate, drawdown, and expectancy"
             ],
             "depends_on": ["P2-T7", "P2-T8", "P2-T10"]
@@ -204,8 +204,8 @@
       {
         "id": "phase-3-ai-learning-layer",
         "name": "AI and Learning Layer",
-        "goal": "Introduce model-based filtering only after deterministic strategies and datasets exist.",
-        "gate": "Models cannot influence production trades until backtests, rollback, and anomaly controls are live.",
+        "goal": "Introduce model-based filtering after deterministic strategy and data layers exist.",
+        "gate": "Models cannot influence production trades until rollback, anomaly controls, and backtests are live.",
         "tasks": [
           {
             "id": "P3-T13",
@@ -215,7 +215,7 @@
             "acceptance_criteria": [
               "profit contributes positive reward",
               "drawdown contributes explicit penalty",
-              "offline training is separated from live execution"
+              "offline training stays separate from live execution"
             ],
             "depends_on": ["P2-T12", "P3-T14"]
           },
@@ -236,7 +236,7 @@
             "owner": "strategy-agent",
             "deliverables": ["trade accept or reject model", "evaluation report"],
             "acceptance_criteria": [
-              "model decision threshold is configurable",
+              "decision threshold is configurable",
               "baseline heuristic comparison is documented"
             ],
             "depends_on": ["P3-T14"]
@@ -248,7 +248,7 @@
             "deliverables": ["market regime detector", "anomaly alert stream"],
             "acceptance_criteria": [
               "weird market conditions generate explicit flags",
-              "risk or execution can consume anomaly status"
+              "risk and execution can consume anomaly status"
             ],
             "depends_on": ["P3-T14", "P4-T20"]
           },
@@ -259,7 +259,7 @@
             "deliverables": ["model registry", "rollback command", "model metadata"],
             "acceptance_criteria": [
               "current production model is identifiable",
-              "rollback can restore prior approved model"
+              "rollback can restore a prior approved model"
             ],
             "depends_on": ["P3-T15"]
           },
@@ -279,8 +279,8 @@
       {
         "id": "phase-4-money-control",
         "name": "Money Control",
-        "goal": "Protect capital with hard risk gates and automated shutdown logic.",
-        "gate": "This phase is release-blocking for any live trading deployment.",
+        "goal": "Protect capital with hard risk gates and shutdown logic.",
+        "gate": "This phase is mandatory before any live trading release.",
         "tasks": [
           {
             "id": "P4-T19",
@@ -342,8 +342,8 @@
       {
         "id": "phase-5-dashboard-control",
         "name": "Dashboard and Control",
-        "goal": "Expose safe observability and operator control after the underlying engine is reliable.",
-        "gate": "Manual controls must route through the same risk and execution APIs as automated flows.",
+        "goal": "Expose safe operator visibility and manual control on top of the stable platform.",
+        "gate": "Manual actions must route through the same risk and execution controls as automated actions.",
         "tasks": [
           {
             "id": "P5-T24",
@@ -352,7 +352,7 @@
             "deliverables": ["PnL panel", "trades panel", "signals panel"],
             "acceptance_criteria": [
               "dashboard refreshes from structured event streams",
-              "no sensitive secrets are rendered in UI"
+              "no sensitive secrets are rendered in the UI"
             ],
             "depends_on": ["P1-T3", "P4-T19"]
           },
@@ -373,7 +373,7 @@
             "owner": "supervisor-agent",
             "deliverables": ["entry markers", "exit markers", "signal overlays"],
             "acceptance_criteria": [
-              "visualization can link trades to signals",
+              "visualizations link trades to signals",
               "time axes support multi-timeframe context"
             ],
             "depends_on": ["P2-T8", "P5-T24"]
@@ -390,47 +390,6 @@
             "depends_on": ["P1-T5", "P4-T20", "P5-T24"]
           }
         ]
-      },
-      {
-        "id": "phase-6-agent-system",
-        "name": "Agent System",
-        "goal": "Coordinate specialized agents on top of stable trading, risk, and observability foundations.",
-        "gate": "Agent autonomy must remain subordinate to supervisor and risk decisions.",
-        "tasks": [
-          {
-            "id": "P6-T28",
-            "title": "Create multi-agent architecture",
-            "owner": "supervisor-agent",
-            "deliverables": ["strategy agent", "risk agent", "execution agent interfaces"],
-            "acceptance_criteria": [
-              "each agent has explicit scope and bounded authority",
-              "inter-agent messages are typed or schema-defined"
-            ],
-            "depends_on": ["P4-T19", "P5-T24"]
-          },
-          {
-            "id": "P6-T29",
-            "title": "Build task queue system for agents",
-            "owner": "supervisor-agent",
-            "deliverables": ["async job queue", "retry semantics", "dead-letter handling"],
-            "acceptance_criteria": [
-              "agent jobs can be replayed safely",
-              "failed jobs are inspectable"
-            ],
-            "depends_on": ["P6-T28", "P1-T4"]
-          },
-          {
-            "id": "P6-T30",
-            "title": "Implement supervisor agent",
-            "owner": "supervisor-agent",
-            "deliverables": ["agent evaluator", "override logic", "decision audit trail"],
-            "acceptance_criteria": [
-              "supervisor can block subordinate decisions",
-              "override actions are logged with rationale"
-            ],
-            "depends_on": ["P6-T28", "P6-T29", "P4-T20"]
-          }
-        ]
       }
     ],
     "execution_order": [
@@ -438,8 +397,7 @@
       "phase-4-money-control",
       "phase-2-strategy-intelligence",
       "phase-3-ai-learning-layer",
-      "phase-5-dashboard-control",
-      "phase-6-agent-system"
+      "phase-5-dashboard-control"
     ],
     "release_tracks": {
       "paper_trading": ["phase-1-core-engine", "phase-2-strategy-intelligence", "phase-4-money-control"],
@@ -449,9 +407,16 @@
         "phase-4-money-control",
         "phase-2-strategy-intelligence",
         "phase-3-ai-learning-layer",
-        "phase-5-dashboard-control",
-        "phase-6-agent-system"
+        "phase-5-dashboard-control"
       ]
+    },
+    "automation": {
+      "bonus_goal": "Turn the roadmap into a Codex task pipeline that can be validated, tracked, and advanced from the command line.",
+      "future_extension": {
+        "name": "agent-system",
+        "description": "A future extension can add queue-backed multi-agent orchestration once the first five phases are underway.",
+        "suggested_components": ["strategy agent", "risk agent", "execution agent", "supervisor agent"]
+      }
     }
   }
 }

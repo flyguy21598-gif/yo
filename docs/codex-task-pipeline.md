@@ -1,113 +1,69 @@
 # Codex Task Pipeline
 
-This repository now treats the requested trading-bot roadmap as a **Codex Task Pipeline** instead of a flat feature wishlist.
+The previous change only documented the roadmap. This version adds a **working pipeline utility** that can validate the roadmap, report phase progress, show the next unblocked tasks, and persist completion state.
 
-## What changed
+## What is now implemented
 
-- The roadmap is encoded in `pipeline/codex-task-pipeline.json` as a machine-readable task graph.
-- Every task has:
-  - a stable task ID,
-  - an owning agent,
-  - explicit dependencies,
-  - deliverables,
-  - acceptance criteria.
-- Release gates are called out so platform stability and money controls land before higher-risk AI features.
+- A **five-phase** canonical roadmap in `pipeline/codex-task-pipeline.json`.
+- A persistent state file in `pipeline/pipeline-state.json`.
+- A Python package in `src/codex_pipeline/` that can:
+  - load pipeline definitions,
+  - validate dependencies and release tracks,
+  - report progress by phase,
+  - identify the next executable tasks,
+  - mark tasks complete while enforcing dependency order.
+- Automated tests in `tests/test_pipeline.py`.
 
-## Pipeline design principles
+## Commands
 
-1. **Stability first**
-   - Core engine work comes before strategy expansion.
-   - Money-control tasks are promoted ahead of strategy and AI rollout.
-2. **Agent ownership**
-   - Strategy, risk, execution, and supervisor responsibilities are separated.
-3. **Codex-friendly execution**
-   - Tasks are small enough to become individual implementation prompts.
-   - Dependencies make it clear what can be parallelized and what must wait.
-4. **Safe rollout**
-   - Paper-trading, live-minimum, and full-platform release tracks are defined separately.
+All commands use the standard library only.
 
-## Recommended execution order
+### Validate the pipeline
 
-1. `phase-1-core-engine`
-2. `phase-4-money-control`
-3. `phase-2-strategy-intelligence`
-4. `phase-3-ai-learning-layer`
-5. `phase-5-dashboard-control`
-6. `phase-6-agent-system`
-
-This ordering intentionally moves **Money Control** ahead of later strategy and AI work because it is release-blocking for any live deployment.
-
-## How to use with Codex
-
-### 1. Pick a release track
-
-- `paper_trading` for a safe initial milestone.
-- `live_trading_minimum` for the first production-capable target.
-- `full_platform` for the complete roadmap.
-
-### 2. Select the next unblocked task
-
-Use the dependency list in `pipeline/codex-task-pipeline.json` to identify the next task whose prerequisites are complete.
-
-Example:
-
-- `P1-T1` can start immediately.
-- `P1-T2` must wait for `P1-T1`.
-- `P1-T3` must wait for both `P1-T1` and `P1-T2`.
-
-### 3. Turn one task into one Codex work item
-
-Use a prompt template like this:
-
-```text
-Implement task P1-T4 from pipeline/codex-task-pipeline.json.
-
-Task title: Build retry and failover execution wrapper.
-Owner: execution-agent.
-Deliverables:
-- Kraken retry policy
-- idempotent order wrapper
-- failover path
-
-Acceptance criteria:
-- transient API failures are retried with backoff
-- duplicate order placement is prevented
-- failover outcome is logged and alertable
-
-Constraints:
-- preserve existing public interfaces where possible
-- add tests for happy path and retry/failure path
-- document config needed for retries and failover
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli validate
 ```
 
-### 4. Gate merges by acceptance criteria
+### Show phase progress
 
-A task should only be considered complete when:
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli summary
+```
 
-- implementation is merged,
-- tests pass,
-- observability hooks are present,
-- rollback or shutdown behavior is documented where relevant.
+### Show the next unblocked tasks
 
-## Why this is a better structure
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli next
+```
 
-The original roadmap mixes foundational engineering, strategy research, AI experimentation, and operator tooling in one list. The task pipeline separates them into an execution system that Codex can work through reliably:
+### Mark a task complete
 
-- **phases** define outcome-based milestones,
-- **tasks** define concrete implementation units,
-- **dependencies** prevent unsafe sequencing,
-- **agent ownership** clarifies responsibility,
-- **release tracks** support staged delivery.
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli complete P1-T1
+```
 
-## Suggested next milestone
+### Inspect a release track
 
-If you want to start implementation immediately, the most defensible first milestone is:
+```bash
+PYTHONPATH=src python -m codex_pipeline.cli track paper_trading
+```
 
-- `P1-T1` modular services,
-- `P1-T2` centralized config,
-- `P1-T3` structured logging,
-- `P1-T6` environment validation,
-- `P4-T19` global risk manager,
-- `P4-T20` kill-switch.
+## Why this addresses the previous gap
 
-That creates a foundation strong enough to support paper trading and later strategy expansion.
+The repository now contains executable tooling rather than a documentation-only roadmap. Codex can use the pipeline utility to drive work phase by phase:
+
+1. Validate the roadmap structure.
+2. Ask for the next unblocked task.
+3. Implement that task.
+4. Mark it complete.
+5. Re-run summary and release-track checks.
+
+## Five implemented phases
+
+1. `phase-1-core-engine`
+2. `phase-2-strategy-intelligence`
+3. `phase-3-ai-learning-layer`
+4. `phase-4-money-control`
+5. `phase-5-dashboard-control`
+
+The earlier agent-system idea is preserved as a future extension in the pipeline metadata, but the pipeline itself now focuses on the requested five phases.
