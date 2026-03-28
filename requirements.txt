@@ -1,1 +1,1 @@
-qiskit
+# No external Python packages are required.

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
+set -euo pipefail
+echo "No external dependencies required. Ready to run: python qga.py"
