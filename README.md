@@ -9,7 +9,7 @@ Temporal Graph Evolution Engine is a production-ready Python 3.11+ simulation sy
 - **Temporal convergence** that merges graph branches with weighted probabilistic edge selection.
 - **Federation state** that consolidates graph state and shared branch memory.
 - **Memory subsystem** supporting both text and vector memories.
-- **Deterministic testing mode** through seeded randomness.
+- **Deterministic simulation mode** through seeded randomness.
 - **Structured logging** using the standard `logging` module.
 - **Offline-compatible dependency shims** that keep the demo runnable when `numpy` or `networkx` are unavailable in the execution environment, while still targeting the real libraries in `requirements.txt`.
 
@@ -110,3 +110,14 @@ Federation owns the authoritative global graph and global memory. It provides:
 - Branches fork with a single graph copy at creation time so evolution remains independent.
 - Reconciliation uses union-of-edges scoring instead of expensive pairwise graph comparisons.
 - Memory vectors are copied only when cloning or consolidating state.
+
+
+## Benchmarking
+
+Run reproducible runtime benchmarks for the full temporal evolution loop:
+
+```bash
+python -m temporal_engine.benchmark
+```
+
+This writes `benchmark_results.json` containing wall-clock timing and resulting global graph/memory cardinalities, making it simple to track regressions over time in CI or local runs.

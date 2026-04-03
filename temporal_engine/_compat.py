@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-try:  # pragma: no cover - exercised when real dependencies exist
+import importlib.util
+
+if importlib.util.find_spec("networkx") is not None:
     import networkx as nx  # type: ignore
-except ImportError:  # pragma: no cover - exercised in constrained environments
+else:
     from temporal_engine.vendor import networkx_stub as nx
 
-try:  # pragma: no cover - exercised when real dependencies exist
+if importlib.util.find_spec("numpy") is not None:
     import numpy as np  # type: ignore
-except ImportError:  # pragma: no cover - exercised in constrained environments
+else:
     from temporal_engine.vendor import numpy_stub as np
 
 __all__ = ["nx", "np"]
