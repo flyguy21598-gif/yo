@@ -11,7 +11,7 @@ Temporal Graph Evolution Engine is a production-ready Python 3.11+ simulation sy
 - **Memory subsystem** supporting both text and vector memories.
 - **Deterministic simulation mode** through seeded randomness.
 - **Structured logging** using the standard `logging` module.
-- **Offline-compatible dependency shims** that keep the demo runnable when `numpy` or `networkx` are unavailable in the execution environment, while still targeting the real libraries in `requirements.txt`.
+- **Production dependency model** using first-party `networkx` and `numpy` directly.
 
 ## Project structure
 
@@ -49,8 +49,6 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
-
-If you are running in a restricted environment without package installation access, the project includes small compatibility shims used only as a fallback so the example and tests can still execute.
 
 ## Running the simulation
 
@@ -121,3 +119,42 @@ python -m temporal_engine.benchmark
 ```
 
 This writes `benchmark_results.json` containing wall-clock timing and resulting global graph/memory cardinalities, making it simple to track regressions over time in CI or local runs.
+
+
+## API reference
+
+### `temporal_engine.core.temporal_branch.TemporalBranch`
+- `evolve()`: advances one step with a randomized graph or memory perturbation.
+- `terminate()`: marks the branch dead explicitly.
+- Tracked attributes: `divergence_factor`, `age`, `creation_time`, `alive`.
+
+### `temporal_engine.core.temporal_manager.TemporalManager`
+- `fork(source_graph, source_memory)`: clones federation state into a new active branch.
+- `tick()`: evolves all active branches by one step and clears dead branches.
+- `cleanup_dead_branches()`: removes dead branches from active tracking.
+
+### `temporal_engine.core.temporal_convergence.TemporalConvergence`
+- `reconcile(federation, branches)`: weighted probabilistic edge merge plus federation consolidation.
+- Weights combine inverse divergence with age bias for convergence voting.
+
+### `temporal_engine.core.federation.Federation`
+- `merge_memories(memories)`: combines branch memory states into one federated memory.
+- `consolidate(graph, memory)`: atomically publishes the global graph/memory state.
+
+### `temporal_engine.simulation.runner.temporal_evolution_round`
+- Runs the simulation lifecycle (`fork -> evolve -> reconcile`) for configurable rounds.
+- Supports deterministic seeded execution for reproducible experiments and tests.
+
+
+## Quality gates
+
+Use these commands for full verification in CI/local environments:
+
+```bash
+pytest temporal_engine/tests
+pytest --cov=temporal_engine --cov-report=term-missing temporal_engine/tests
+python main.py
+python -m temporal_engine.benchmark
+```
+
+Benchmark output is persisted to `benchmark_results.json` and can be archived as a CI artifact for regression tracking.
