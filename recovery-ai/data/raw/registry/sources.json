@@ -1,0 +1,18 @@
+[
+  {
+    "source_id": "local_seed_corpus",
+    "kind": "local_file",
+    "location": "recovery-ai/data/raw/local_seed.txt",
+    "trust_score": 0.95,
+    "enabled": true,
+    "tags": ["bootstrap", "offline"]
+  },
+  {
+    "source_id": "local_archive_snapshots",
+    "kind": "local_dir",
+    "location": "recovery-ai/data/raw/archives",
+    "trust_score": 0.85,
+    "enabled": true,
+    "tags": ["archive", "offline"]
+  }
+]

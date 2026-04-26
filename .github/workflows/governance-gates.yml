@@ -1,0 +1,58 @@
+name: governance-gates
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  policy-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate PR metadata policy
+        run: |
+          python recovery-ai/governance/validate_pr_metadata.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --policy recovery-ai/governance/policies/pr_metadata_policy.json \
+            --log recovery-ai/governance/logs/pr_metadata_checks.jsonl
+
+      - name: Fetch approval count
+        id: approvals
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+            const latestByUser = new Map();
+            for (const r of reviews) {
+              latestByUser.set(r.user.login, r.state);
+            }
+            let approvals = 0;
+            for (const state of latestByUser.values()) {
+              if (state === 'APPROVED') approvals += 1;
+            }
+            core.setOutput('count', approvals.toString());
+
+      - name: Enforce two-person approval and emergency override logging
+        run: |
+          python recovery-ai/governance/enforce_approval_policy.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --approval-count "${{ steps.approvals.outputs.count }}" \
+            --log recovery-ai/governance/logs/approval_policy_checks.jsonl

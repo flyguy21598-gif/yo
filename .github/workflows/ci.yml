@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, work]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: recovery-ai/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r recovery-ai/requirements.txt
+
+      - name: Compile checks
+        run: python -m compileall recovery-ai
+
+      - name: Unit tests
+        run: |
+          cd recovery-ai
+          PYTHONPATH=. python -m pytest tests -q
+
+      - name: Pipeline smoke test
+        run: PYTHONPATH=. python recovery-ai/scripts/ci_pipeline_smoke.py
