@@ -50,6 +50,21 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+
+## GitHub Codespaces
+
+This repository is Codespaces-ready via `.devcontainer/devcontainer.json`.
+
+1. Open the repo in GitHub and click **Code → Codespaces → Create codespace**.
+2. Wait for the container build to complete.
+3. The post-create script installs dependencies automatically.
+
+Manual bootstrap inside a Codespace:
+
+```bash
+bash .devcontainer/postCreate.sh
+```
+
 ## Running the simulation
 
 ```bash
@@ -148,7 +163,7 @@ This writes `benchmark_results.json` containing wall-clock timing and resulting 
 
 ## Quality gates
 
-Use these commands for full verification in CI/local environments:
+Use these commands for full verification in CI, local environments, and Codespaces:
 
 ```bash
 pytest temporal_engine/tests
