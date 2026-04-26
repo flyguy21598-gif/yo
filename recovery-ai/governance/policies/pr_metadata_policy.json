@@ -1,0 +1,22 @@
+{
+  "required_fields": [
+    "Change-Type",
+    "Promotion-Target",
+    "Who",
+    "Why",
+    "Artifacts",
+    "Metrics"
+  ],
+  "allowed_change_types": [
+    "model_promotion",
+    "deployment",
+    "infra",
+    "governance"
+  ],
+  "allowed_promotion_targets": [
+    "none",
+    "staging",
+    "production"
+  ],
+  "emergency_override_field": "Emergency-Override-Reason"
+}

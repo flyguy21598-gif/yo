@@ -45,3 +45,9 @@ PYTHONPATH=. python inference/predict.py --input-file inputs.txt --output predic
 ```bash
 PYTHONPATH=. python -m pytest tests -q
 ```
+
+
+## Governance
+
+- Governance gates and compliance workflows are documented in `docs/GOVERNANCE_AND_COMPLIANCE.md`.
+- PR metadata, two-person approval enforcement, immutable audit bundles, and compliance reports are implemented under `governance/`.
