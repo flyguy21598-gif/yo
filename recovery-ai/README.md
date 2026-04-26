@@ -51,3 +51,10 @@ PYTHONPATH=. python -m pytest tests -q
 
 - Governance gates and compliance workflows are documented in `docs/GOVERNANCE_AND_COMPLIANCE.md`.
 - PR metadata, two-person approval enforcement, immutable audit bundles, and compliance reports are implemented under `governance/`.
+
+
+## GitHub Automation
+
+- `.github/workflows/ci.yml` runs compile, tests, and a pipeline smoke test on PRs/pushes.
+- `.github/workflows/train-and-evaluate.yml` performs scheduled/on-demand candidate training, evaluation, and immutable audit bundle creation.
+- `.github/workflows/governance-gates.yml` enforces PR metadata policy and production approval gates.

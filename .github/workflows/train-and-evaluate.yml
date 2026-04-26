@@ -1,0 +1,84 @@
+name: train-and-evaluate
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_reason:
+        description: 'Reason for candidate training run'
+        required: true
+        default: 'scheduled candidate refresh'
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: recovery-ai/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r recovery-ai/requirements.txt
+
+      - name: Build deterministic training fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          data = [
+              {"source_id":"train","text":"WIF checksum mismatch with mnemonic seed backup and transcription swap"},
+              {"source_id":"train","text":"Mnemonic phrase valid but derivation path logic mismatch across wallet versions"},
+              {"source_id":"train","text":"SHA256 fingerprint and checksum indicate likely recoverable artifact"},
+              {"source_id":"train","text":"Pattern typo cluster 0/O and l/1 in manual recovery notes"}
+          ]
+          raw = Path('recovery-ai/data/raw/ci_train_input.jsonl')
+          raw.parent.mkdir(parents=True, exist_ok=True)
+          with raw.open('w', encoding='utf-8') as h:
+              for row in data:
+                  h.write(json.dumps(row)+'\n')
+          PY
+
+      - name: Run processing pipeline
+        run: |
+          PYTHONPATH=. python recovery-ai/processing/cleaner.py recovery-ai/data/raw/ci_train_input.jsonl --output recovery-ai/data/cleaned/cleaned.jsonl
+          PYTHONPATH=. python recovery-ai/processing/labeler.py recovery-ai/data/cleaned/cleaned.jsonl --output recovery-ai/data/labeled/labeled.jsonl
+          PYTHONPATH=. python recovery-ai/processing/dataset_builder.py recovery-ai/data/labeled/labeled.jsonl --output-dir recovery-ai/data/datasets
+
+      - name: Train candidate models
+        run: |
+          PYTHONPATH=. python recovery-ai/training/train_entropy.py
+          PYTHONPATH=. python recovery-ai/training/train_pattern.py
+          PYTHONPATH=. python recovery-ai/training/train_logic.py
+          PYTHONPATH=. python recovery-ai/training/train_unified.py
+
+      - name: Evaluate candidate
+        run: PYTHONPATH=. python recovery-ai/scripts/evaluate_candidate.py
+
+      - name: Build immutable audit bundle
+        run: |
+          RELEASE_ID="train-${GITHUB_RUN_ID}"
+          ACTOR="${GITHUB_ACTOR}"
+          REASON="${{ github.event.inputs.release_reason || 'automated training run' }}"
+          PYTHONPATH=. python recovery-ai/governance/audit_bundle.py bundle --release-id "$RELEASE_ID" --actor "$ACTOR" --reason "$REASON"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-ai-candidate-${{ github.run_id }}
+          path: |
+            recovery-ai/artifacts/
+            recovery-ai/governance/reports/candidate_evaluation.json
+            recovery-ai/governance/reports/candidate_evaluation.md
+            recovery-ai/governance/releases/
