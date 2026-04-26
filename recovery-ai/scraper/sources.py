@@ -1,27 +1,36 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from pathlib import Path
+
+from utils.config import get_config
 
 
 @dataclass(frozen=True, slots=True)
 class Source:
-    name: str
+    source_id: str
     kind: str
     location: str
-    note: str
+    trust_score: float
+    enabled: bool
+    tags: tuple[str, ...]
 
 
-DEFAULT_SOURCES = [
-    Source(
-        name="local_seed_corpus",
-        kind="local",
-        location="recovery-ai/data/raw/local_seed.txt",
-        note="Offline bootstrap corpus for recovery-related experimentation.",
-    ),
-    Source(
-        name="example_forum_snapshot",
-        kind="url",
-        location="https://example.com/forum/archive/recovery-thread",
-        note="Demonstrates HTTP scraping path when the operator approves source lists.",
-    ),
-]
+def load_sources() -> list[Source]:
+    config = get_config()
+    if not config.registry_file.exists():
+        raise FileNotFoundError(f"missing source registry: {config.registry_file}")
+    records = json.loads(config.registry_file.read_text(encoding="utf-8"))
+    sources = [
+        Source(
+            source_id=record["source_id"],
+            kind=record["kind"],
+            location=record["location"],
+            trust_score=float(record["trust_score"]),
+            enabled=bool(record["enabled"]),
+            tags=tuple(record.get("tags", [])),
+        )
+        for record in records
+    ]
+    return [source for source in sources if source.enabled]

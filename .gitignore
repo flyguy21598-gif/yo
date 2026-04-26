@@ -3,5 +3,8 @@ recovery-ai/artifacts/
 recovery-ai/data/raw/*.jsonl
 recovery-ai/data/cleaned/*.jsonl
 recovery-ai/data/labeled/*.jsonl
+recovery-ai/data/datasets/*/train.jsonl
+recovery-ai/data/datasets/*/val.jsonl
+recovery-ai/data/datasets/*/test.jsonl
 __pycache__/
 *.pyc
