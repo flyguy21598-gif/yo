@@ -1,21 +1,40 @@
 # Revenant AI Bootstrap
 
-This repository now includes a rapid bootstrap for a large AI product codebase that can be adapted for quick monetization.
+A concrete MVP starter for an **Autonomous Offer Engine** that can produce launch plans for growth teams.
 
-## Vision
+## What is included now
 
-Build an **Autonomous Offer Engine** that generates, launches, and optimizes marketing assets for businesses.
+- Domain model for offers, audience segments, and experiments.
+- Deterministic planning engine to allocate budget by channel and estimate pipeline.
+- FastAPI app exposing `/health` and `/launch-plan`.
+- CLI entrypoint for fast local usage.
+- Unit tests for planning behavior.
 
-See `PRODUCT.md` for product and monetization framing.
+## Quickstart
 
-## Generate 100k+ LOC scaffold
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+pytest
+```
+
+Run API:
+
+```bash
+uvicorn revenant.api.app:app --reload
+```
+
+Run CLI:
+
+```bash
+python -m revenant.cli --company "Acme" --budget 10000
+```
+
+## Optional large scaffold
+
+If you still need a very large codebase skeleton for org/process bootstrapping:
 
 ```bash
 python3 tools/generate_monorepo.py
 ```
-
-Output is written to:
-
-- `generated/revenant-monorepo/`
-
-The generator creates a structured monorepo skeleton with backend, frontend, SDK, infra, and test modules exceeding 100,000 lines total.
